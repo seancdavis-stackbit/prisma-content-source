@@ -1,4 +1,5 @@
 import { Page, PrismaClient } from "@prisma/client";
+import { GetStaticProps } from "next";
 const prisma = new PrismaClient();
 
 export async function getStaticPaths() {
@@ -21,19 +22,27 @@ export async function getStaticPaths() {
   return { paths, fallback: false };
 }
 
-export async function getStaticProps({ params }) {
+export const getStaticProps: GetStaticProps = async ({ params }) => {
   console.log("getStaticProps");
   console.log({ params });
+
+  let slug = params?.slug || [];
+  if (typeof slug === "string") slug = [slug];
+  if (slug.length === 0) slug = ["/"];
 
   // Get page record from Prisma
   const page = await prisma.page.findUnique({
     where: {
-      urlPath: params.slug.join("/"),
+      urlPath: slug.join("/"),
     },
   });
 
+  if (!page) {
+    return { notFound: true };
+  }
+
   return { props: { page } };
-}
+};
 
 export default function Home(props: { page: Page }) {
   const { page } = props;
